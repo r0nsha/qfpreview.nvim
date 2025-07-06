@@ -6,16 +6,7 @@ local group = vim.api.nvim_create_augroup("QuickfixPreview", { clear = true })
 function M.setup(config)
   local preview = require("lib.preview"):new(config)
 
-  vim.api.nvim_create_autocmd("WinEnter", {
-    group = group,
-    callback = function()
-      if vim.bo.filetype == "qf" then
-        preview:open()
-      end
-    end,
-  })
-
-  vim.api.nvim_create_autocmd("CursorMoved", {
+  vim.api.nvim_create_autocmd({ "WinEnter", "CursorMoved" }, {
     group = group,
     callback = function()
       if vim.bo.filetype == "qf" then
