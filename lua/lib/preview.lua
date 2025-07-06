@@ -1,22 +1,8 @@
 local util = require("lib.util")
 
----@class QuickfixItem
----@field bufnr number
----@field module string
----@field lnum number
----@field end_lnum number
----@field col number
----@field end_col number
----@field vcol boolean
----@field pattern any
----@field text string
----@field type string
----@field valid boolean
----@field user_data any
-
 ---@class qfpreview.Config
 ---@field height number | "fill"
----@field title fun(bufnr: number): string | false
+---@field win vim.api.keyset.win_config
 
 ---@class qfpreview.Preview
 ---@field config qfpreview.Config
@@ -28,9 +14,7 @@ Preview.__index = Preview
 ---@type qfpreview.Config
 local defaults = {
   height = "fill",
-  title = function(bufnr)
-    return vim.api.nvim_buf_get_name(bufnr)
-  end,
+  win = {},
 }
 
 ---@param config? qfpreview.Config
@@ -46,30 +30,49 @@ function Preview:new(config)
   return p
 end
 
----@return boolean
-function Preview:is_closed()
-  return self.win_id == nil
+---@class QuickfixItem
+---@field bufnr number
+---@field module string
+---@field lnum number
+---@field end_lnum number
+---@field col number
+---@field end_col number
+---@field vcol boolean
+---@field pattern any
+---@field text string
+---@field type string
+---@field valid boolean
+---@field user_data any
+
+---@return QuickfixItem
+function Preview:curr_item()
+  ---@type QuickfixItem
+  local qflist = vim.fn.getqflist()
+  return qflist[vim.fn.line(".")]
 end
 
----@param item_index number
-function Preview:highlight(item_index)
-  ---@type QuickfixItem[]
-  local qf_list = vim.fn.getqflist()
-  local curr_item = qf_list[item_index]
-
-  if not self.parsed_bufs[curr_item.bufnr] then
-    vim.api.nvim_buf_call(curr_item.bufnr, function()
+---@param item QuickfixItem
+function Preview:highlight(item)
+  if not self.parsed_bufs[item.bufnr] then
+    vim.api.nvim_buf_call(item.bufnr, function()
       vim.cmd("filetype detect")
-      pcall(vim.treesitter.start, curr_item.bufnr)
+      pcall(vim.treesitter.start, item.bufnr)
     end)
-    self.parsed_bufs[curr_item.bufnr] = true
+    self.parsed_bufs[item.bufnr] = true
   end
 
-  vim.api.nvim_win_set_cursor(self.win_id, { curr_item.lnum, curr_item.col })
+  vim.api.nvim_win_set_cursor(self.win_id, { item.lnum, item.col })
 end
 
+---@param bufnr number
+---@return string
+function Preview:title(bufnr)
+  return vim.api.nvim_buf_get_name(bufnr)
+end
+
+---@param bufnr number
 ---@return vim.api.keyset.win_config
-function Preview:win_config()
+function Preview:win_config(bufnr)
   if self.config.height == "fill" then
     local qflist_win = util.find_qflist_win()
 
@@ -82,6 +85,8 @@ function Preview:win_config()
         width = vim.api.nvim_win_get_width(0),
         height = height,
         row = 0,
+        title = self:title(bufnr),
+        title_pos = "left",
       }
     end
   end
@@ -97,33 +102,33 @@ function Preview:win_config()
   }
 end
 
+---@return boolean
+function Preview:is_open()
+  return self.win_id ~= nil
+end
+
 function Preview:open()
-  ---@type QuickfixItem[]
   local qf_list = vim.fn.getqflist()
   if vim.tbl_isempty(qf_list) then
     return
   end
 
-  local curr_linenr = vim.fn.line(".")
-  local curr_item = qf_list[curr_linenr]
+  local item = self:curr_item()
 
-  local winconfig = vim.tbl_extend("force", { col = 1, focusable = false }, self:win_config())
-  if self.config.title then
-    winconfig.title = self.config.title(curr_item.bufnr)
-    winconfig.title_pos = "left"
-  end
-  self.win_id = vim.api.nvim_open_win(curr_item.bufnr, false, winconfig)
+  local winconfig =
+    vim.tbl_extend("force", { col = 1, focusable = false }, self:win_config(item.bufnr), self.config.win or {})
+  self.win_id = vim.api.nvim_open_win(item.bufnr, false, winconfig)
 
   vim.wo[self.win_id].relativenumber = false
   vim.wo[self.win_id].number = true
   vim.wo[self.win_id].winblend = 0
   vim.wo[self.win_id].cursorline = true
 
-  self:highlight(curr_linenr)
+  self:highlight(item)
 end
 
 function Preview:close()
-  if self:is_closed() then
+  if not self:is_open() then
     return
   end
 
@@ -135,23 +140,16 @@ function Preview:close()
 end
 
 function Preview:refresh()
-  if self:is_closed() then
+  if not self:is_open() then
     self:open()
     return
   end
 
-  ---@type QuickfixItem[]
-  local qf_list = vim.fn.getqflist()
-  local curr_linenr = vim.fn.line(".")
-  local curr_item = qf_list[curr_linenr]
+  local item = self:curr_item()
 
-  vim.api.nvim_win_set_buf(self.win_id, curr_item.bufnr)
-
-  if self.config.title then
-    vim.api.nvim_win_set_config(self.win_id, { title = self.config.title(curr_item.bufnr) })
-  end
-
-  self:highlight(curr_linenr)
+  vim.api.nvim_win_set_buf(self.win_id, item.bufnr)
+  vim.api.nvim_win_set_config(self.win_id, { title = self:title(item.bufnr) })
+  self:highlight(item)
 end
 
 return Preview
