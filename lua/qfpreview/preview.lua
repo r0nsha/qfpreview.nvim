@@ -1,9 +1,10 @@
-local util = require("lib.util")
+local util = require("qfpreview.util")
 
 ---@class qfpreview.Config
----@field height number | "fill" the height of the preview window
+---@field height number | "fill" the height of the window
 --- number will set the window to a fixed height
 --- "fill" will make the window fill the editor's remaining space
+---@field throttle number the window's throttle time in milliseconds
 ---@field win vim.api.keyset.win_config additinonal window configuration
 
 ---@class qfpreview.Preview
@@ -16,6 +17,7 @@ Preview.__index = Preview
 ---@type qfpreview.Config
 local defaults = {
   height = "fill",
+  throttle = 100,
   win = {},
 }
 
