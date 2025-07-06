@@ -1,8 +1,10 @@
 local util = require("lib.util")
 
 ---@class qfpreview.Config
----@field height number | "fill"
----@field win vim.api.keyset.win_config
+---@field height number | "fill" the height of the preview window
+--- number will set the window to a fixed height
+--- "fill" will make the window fill the editor's remaining space
+---@field win vim.api.keyset.win_config additinonal window configuration
 
 ---@class qfpreview.Preview
 ---@field config qfpreview.Config
