@@ -20,8 +20,8 @@ local util = require("lib.util")
 
 ---@class qfpreview.Preview
 ---@field config qfpreview.Config
----@field preview_win_id number
----@field parsed_buffers table<number, boolean>
+---@field win_id number
+---@field parsed_bufs table<number, boolean>
 local Preview = {}
 Preview.__index = Preview
 
@@ -38,7 +38,7 @@ local defaults = {
 function Preview:new(config)
   local p = {
     config = vim.tbl_deep_extend("force", defaults, config or {}),
-    preview_win_id = nil,
+    win_id = nil,
     parsed_buffers = {},
   }
   setmetatable(p, self)
@@ -48,24 +48,24 @@ end
 
 ---@return boolean
 function Preview:is_closed()
-  return self.preview_win_id == nil
+  return self.win_id == nil
 end
 
----@param opts { preview_win_id: number, item_index: number}
-function Preview:highlight(opts)
+---@param item_index number
+function Preview:highlight(item_index)
   ---@type QuickfixItem[]
   local qf_list = vim.fn.getqflist()
-  local curr_item = qf_list[opts.item_index]
+  local curr_item = qf_list[item_index]
 
-  if not self.parsed_buffers[curr_item.bufnr] then
+  if not self.parsed_bufs[curr_item.bufnr] then
     vim.api.nvim_buf_call(curr_item.bufnr, function()
       vim.cmd("filetype detect")
       pcall(vim.treesitter.start, curr_item.bufnr)
     end)
-    self.parsed_buffers[curr_item.bufnr] = true
+    self.parsed_bufs[curr_item.bufnr] = true
   end
 
-  vim.api.nvim_win_set_cursor(opts.preview_win_id, { curr_item.lnum, curr_item.col })
+  vim.api.nvim_win_set_cursor(self.win_id, { curr_item.lnum, curr_item.col })
 end
 
 ---@return vim.api.keyset.win_config
@@ -112,14 +112,14 @@ function Preview:open()
     winconfig.title = self.config.title(curr_item.bufnr)
     winconfig.title_pos = "left"
   end
-  self.preview_win_id = vim.api.nvim_open_win(curr_item.bufnr, false, winconfig)
+  self.win_id = vim.api.nvim_open_win(curr_item.bufnr, false, winconfig)
 
-  vim.wo[self.preview_win_id].relativenumber = false
-  vim.wo[self.preview_win_id].number = true
-  vim.wo[self.preview_win_id].winblend = 0
-  vim.wo[self.preview_win_id].cursorline = true
+  vim.wo[self.win_id].relativenumber = false
+  vim.wo[self.win_id].number = true
+  vim.wo[self.win_id].winblend = 0
+  vim.wo[self.win_id].cursorline = true
 
-  self:highlight({ preview_win_id = self.preview_win_id, item_index = curr_linenr })
+  self:highlight(curr_linenr)
 end
 
 function Preview:close()
@@ -127,10 +127,10 @@ function Preview:close()
     return
   end
 
-  if vim.api.nvim_win_is_valid(self.preview_win_id) then
+  if vim.api.nvim_win_is_valid(self.win_id) then
     local force = true
-    vim.api.nvim_win_close(self.preview_win_id, force)
-    self.preview_win_id = nil
+    vim.api.nvim_win_close(self.win_id, force)
+    self.win_id = nil
   end
 end
 
@@ -145,13 +145,13 @@ function Preview:refresh()
   local curr_linenr = vim.fn.line(".")
   local curr_item = qf_list[curr_linenr]
 
-  vim.api.nvim_win_set_buf(self.preview_win_id, curr_item.bufnr)
+  vim.api.nvim_win_set_buf(self.win_id, curr_item.bufnr)
 
   if self.config.title then
-    vim.api.nvim_win_set_config(self.preview_win_id, { title = self.config.title(curr_item.bufnr) })
+    vim.api.nvim_win_set_config(self.win_id, { title = self.config.title(curr_item.bufnr) })
   end
 
-  self:highlight({ preview_win_id = self.preview_win_id, item_index = curr_linenr })
+  self:highlight(curr_linenr)
 end
 
 return Preview
