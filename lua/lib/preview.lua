@@ -39,7 +39,7 @@ function Preview:new(config)
   local p = {
     config = vim.tbl_deep_extend("force", defaults, config or {}),
     win_id = nil,
-    parsed_buffers = {},
+    parsed_bufs = {},
   }
   setmetatable(p, self)
   self.__index = self
