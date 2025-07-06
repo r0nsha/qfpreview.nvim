@@ -66,15 +66,8 @@ function Preview:highlight(item)
   vim.api.nvim_win_set_cursor(self.win_id, { item.lnum, item.col })
 end
 
----@param bufnr number
----@return string
-function Preview:title(bufnr)
-  return vim.api.nvim_buf_get_name(bufnr)
-end
-
----@param bufnr number
 ---@return vim.api.keyset.win_config
-function Preview:win_config(bufnr)
+function Preview:win_config()
   if self.config.height == "fill" then
     local qflist_win = util.find_qflist_win()
 
@@ -87,8 +80,6 @@ function Preview:win_config(bufnr)
         width = vim.api.nvim_win_get_width(0),
         height = height,
         row = 0,
-        title = self:title(bufnr),
-        title_pos = "left",
       }
     end
   end
@@ -150,7 +141,6 @@ function Preview:refresh()
   local item = self:curr_item()
 
   vim.api.nvim_win_set_buf(self.win_id, item.bufnr)
-  vim.api.nvim_win_set_config(self.win_id, { title = self:title(item.bufnr) })
   self:highlight(item)
 end
 
