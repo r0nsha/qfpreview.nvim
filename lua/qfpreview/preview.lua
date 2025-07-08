@@ -1,15 +1,17 @@
+local Path = require("plenary.path")
 local util = require("qfpreview.util")
 
 ---@class qfpreview.Config
 ---@field height number | "fill" the height of the window
 --- number will set the window to a fixed height
 --- "fill" will make the window fill the editor's remaining space
+---@field show_name boolean whether to show the buffer's name
 ---@field throttle number the window's throttle time in milliseconds
 ---@field win vim.api.keyset.win_config additinonal window configuration
 
 ---@class qfpreview.Preview
 ---@field config qfpreview.Config
----@field win_id number
+---@field winnr number
 ---@field parsed_bufs table<number, boolean>
 local Preview = {}
 Preview.__index = Preview
@@ -17,6 +19,7 @@ Preview.__index = Preview
 ---@type qfpreview.Config
 local defaults = {
   height = "fill",
+  show_name = true,
   throttle = 100,
   win = {},
 }
@@ -65,7 +68,7 @@ function Preview:highlight(item)
     self.parsed_bufs[item.bufnr] = true
   end
 
-  vim.api.nvim_win_set_cursor(self.win_id, { item.lnum, item.col })
+  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
 end
 
 ---@return vim.api.keyset.win_config
@@ -99,7 +102,15 @@ end
 
 ---@return boolean
 function Preview:is_open()
-  return self.win_id ~= nil
+  return self.winnr ~= nil
+end
+
+---@param bufnr number
+---@return string
+function Preview:title(bufnr)
+  ---@type Path
+  local path = Path:new(vim.fn.bufname(bufnr))
+  return path:normalize(vim.fn.getcwd())
 end
 
 function Preview:open()
@@ -110,14 +121,20 @@ function Preview:open()
 
   local item = self:curr_item()
 
-  local winconfig =
-    vim.tbl_extend("force", { col = 1, focusable = false }, self:win_config(item.bufnr), self.config.win or {})
-  self.win_id = vim.api.nvim_open_win(item.bufnr, false, winconfig)
+  ---@type vim.api.keyset.win_config
+  local winconfig = vim.tbl_extend("force", { col = 1, focusable = false }, self:win_config(), self.config.win or {})
 
-  vim.wo[self.win_id].relativenumber = false
-  vim.wo[self.win_id].number = true
-  vim.wo[self.win_id].winblend = 0
-  vim.wo[self.win_id].cursorline = true
+  if self.config.show_name then
+    winconfig.title = self:title(item.bufnr)
+    winconfig.title_pos = "left"
+  end
+
+  self.winnr = vim.api.nvim_open_win(item.bufnr, false, winconfig)
+
+  vim.wo[self.winnr].relativenumber = false
+  vim.wo[self.winnr].number = true
+  vim.wo[self.winnr].winblend = 0
+  vim.wo[self.winnr].cursorline = true
 
   self:highlight(item)
 end
@@ -127,10 +144,10 @@ function Preview:close()
     return
   end
 
-  if vim.api.nvim_win_is_valid(self.win_id) then
+  if vim.api.nvim_win_is_valid(self.winnr) then
     local force = true
-    vim.api.nvim_win_close(self.win_id, force)
-    self.win_id = nil
+    vim.api.nvim_win_close(self.winnr, force)
+    self.winnr = nil
   end
 end
 
@@ -142,7 +159,11 @@ function Preview:refresh()
 
   local item = self:curr_item()
 
-  vim.api.nvim_win_set_buf(self.win_id, item.bufnr)
+  vim.api.nvim_win_set_buf(self.winnr, item.bufnr)
+  if self.config.show_name then
+    vim.api.nvim_win_set_config(self.winnr, { title = self:title(item.bufnr) })
+  end
+
   self:highlight(item)
 end
 
