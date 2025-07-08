@@ -2,6 +2,10 @@
 
 Just a preview for Neovim's quickfix list.
 
+| Fill                                | Fixed height                                 |
+| ----------------------------------- | -------------------------------------------- |
+| ![Fill](assets/screenshot_fill.png) | ![Fixed height](assets/screenshot_fixed.png) |
+
 ## Installation
 
 Install `qfpreview.nvim` using your favorite plugin manager.
