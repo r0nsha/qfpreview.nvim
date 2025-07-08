@@ -40,6 +40,8 @@ require('qfpreview').setup({
     -- number will set the window to a fixed height
     -- "fill" will make the window fill the editor's remaining space
     height = "fill",
+    -- whether to show the buffer's name
+    show_name = true,
     -- the window's throttle time in milliseconds
     throttle = 100,
     -- additinonal window configuration
