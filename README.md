@@ -6,7 +6,7 @@ Just a preview for Neovim's quickfix list.
 | ----------------------------------- | -------------------------------------------- |
 | ![Fill](assets/screenshot_fill.png) | ![Fixed height](assets/screenshot_fixed.png) |
 
-> The pretty quickfix list is from the awesome [`stevearc/quicker.nvim`](https://github.com/stevearc/quicker.nvim)
+> The pretty quickfix list is by the awesome [`stevearc/quicker.nvim`](https://github.com/stevearc/quicker.nvim).
 
 ## Installation
 
