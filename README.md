@@ -11,6 +11,7 @@ Install `qfpreview.nvim` using your favorite plugin manager.
 ```lua
 {
   'r0nsha/qfpreview.nvim',
+  dependencies = { 'nvim-lua/plenary.nvim' },
   opts = {
     -- Your custom configuration goes here
   }
@@ -22,6 +23,7 @@ Install `qfpreview.nvim` using your favorite plugin manager.
 ```lua
 use({
   'r0nsha/qfpreview.nvim',
+  requires = { { 'nvim-lua/plenary.nvim' } },
   config = function()
     require('qfpreview').setup({
       -- Your custom configuration goes here
