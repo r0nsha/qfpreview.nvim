@@ -73,12 +73,13 @@ end
 
 ---@return vim.api.keyset.win_config
 function Preview:win_config()
+  local border = vim.o.winborder == "none" and 0 or 2
+
   if self.config.height == "fill" then
     local qflist_win = util.find_qflist_win()
 
     if qflist_win then
       local statusline = vim.o.laststatus == 0 and 0 or 1
-      local border = vim.o.winborder == "none" and 0 or 2
       local height = vim.o.lines - vim.api.nvim_win_get_height(qflist_win) - vim.o.cmdheight - border - statusline
       return {
         relative = "editor",
@@ -96,7 +97,7 @@ function Preview:win_config()
     win = vim.api.nvim_get_current_win(),
     width = vim.api.nvim_win_get_width(0),
     height = height,
-    row = -1 * height,
+    row = -1 * height - border,
   }
 end
 
