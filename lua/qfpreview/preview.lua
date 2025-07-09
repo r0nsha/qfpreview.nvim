@@ -70,12 +70,14 @@ function Preview:highlight(item)
   vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
 end
 
+-- TODO: support vertically split qflist
+
 ---@param qfwin number
 ---@return vim.api.keyset.win_config
 function Preview:win_config(qfwin)
   local border = vim.o.winborder == "none" and 0 or 2
+  local qfwin_col = vim.api.nvim_win_get_position(qfwin)[2]
 
-  -- TODO: col = qfwin.col
   if self.config.height == "fill" then
     local statusline = vim.o.laststatus == 0 and 0 or 1
     local height = vim.o.lines - vim.api.nvim_win_get_height(qfwin) - vim.o.cmdheight - border - statusline
@@ -84,6 +86,8 @@ function Preview:win_config(qfwin)
       width = vim.api.nvim_win_get_width(0),
       height = height,
       row = 0,
+      col = qfwin_col,
+      focusable = false,
     }
   end
 
@@ -95,6 +99,8 @@ function Preview:win_config(qfwin)
     width = vim.api.nvim_win_get_width(0),
     height = height,
     row = -1 * height - border,
+    col = qfwin_col,
+    focusable = false,
   }
 end
 
@@ -119,8 +125,7 @@ function Preview:open(qfwin)
   local item = self:curr_item()
 
   ---@type vim.api.keyset.win_config
-  local winconfig =
-    vim.tbl_extend("force", { col = 1, focusable = false }, self:win_config(qfwin), self.config.win or {})
+  local winconfig = vim.tbl_extend("force", self:win_config(qfwin), self.config.win or {})
 
   if self.config.show_name then
     winconfig.title = self:title(item.bufnr)
@@ -160,7 +165,8 @@ function Preview:refresh(qfwin)
 
   vim.api.nvim_win_set_buf(self.winnr, item.bufnr)
   if self.config.show_name then
-    vim.api.nvim_win_set_config(self.winnr, { title = self:title(item.bufnr) })
+    local win_config = vim.tbl_extend("force", self:win_config(qfwin), { title = self:title(item.bufnr) })
+    vim.api.nvim_win_set_config(self.winnr, win_config)
   end
 
   self:highlight(item)

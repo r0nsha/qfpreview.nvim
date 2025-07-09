@@ -16,7 +16,7 @@ function M.setup(config)
   ---@type integer?
   local qfwin
 
-  vim.api.nvim_create_autocmd({ "WinEnter", "CursorMoved" }, {
+  vim.api.nvim_create_autocmd({ "BufWinEnter", "CursorMoved", "WinResized" }, {
     group = group,
     callback = function()
       if vim.bo.filetype == "qf" then
