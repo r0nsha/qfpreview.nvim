@@ -102,6 +102,11 @@ function Preview:win_config(qfwin)
   if self.config.height == "fill" then
     local statusline_height = vim.o.laststatus == 0 and 0 or 1
     local height = vim.o.lines - vim.api.nvim_win_get_height(qfwin) - vim.o.cmdheight - border_width - statusline_height
+
+    if height < 0 then
+      height = 15
+    end
+
     return {
       relative = "editor",
       width = width,
