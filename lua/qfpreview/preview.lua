@@ -1,4 +1,4 @@
-local Path = require("plenary.path")
+local fs = require("qfpreview.fs")
 local util = require("qfpreview.util")
 
 ---@class qfpreview.Config
@@ -109,9 +109,7 @@ end
 ---@param bufnr number
 ---@return string
 function Preview:title(bufnr)
-  ---@type Path
-  local path = Path:new(vim.fn.bufname(bufnr))
-  return path:normalize(vim.fn.getcwd())
+  return fs.normalize_path(vim.fn.bufname(bufnr), vim.fn.getcwd())
 end
 
 function Preview:open()
