@@ -73,20 +73,41 @@ end
 -- TODO: support vertically split qflist
 
 ---@param qfwin number
+---@return number,number
+local function get_aligned_col_width(qfwin)
+  local has_border = vim.o.winborder ~= "none"
+  local col = vim.api.nvim_win_get_position(qfwin)[2]
+  local width = vim.api.nvim_win_get_width(qfwin)
+
+  if not has_border then
+    return col, width
+  end
+
+  if (col + width) == vim.o.columns then
+    return col + 1, width - 1
+  elseif col == 0 then
+    return col, width - 1
+  else
+    return col - 1, width
+  end
+end
+
+---@param qfwin number
 ---@return vim.api.keyset.win_config
 function Preview:win_config(qfwin)
-  local border = vim.o.winborder == "none" and 0 or 2
-  local qfwin_col = vim.api.nvim_win_get_position(qfwin)[2]
+  local has_border = vim.o.winborder ~= "none"
+  local border_width = has_border and 2 or 0
+  local col, width = get_aligned_col_width(qfwin)
 
   if self.config.height == "fill" then
-    local statusline = vim.o.laststatus == 0 and 0 or 1
-    local height = vim.o.lines - vim.api.nvim_win_get_height(qfwin) - vim.o.cmdheight - border - statusline
+    local statusline_height = vim.o.laststatus == 0 and 0 or 1
+    local height = vim.o.lines - vim.api.nvim_win_get_height(qfwin) - vim.o.cmdheight - border_width - statusline_height
     return {
       relative = "editor",
-      width = vim.api.nvim_win_get_width(0),
+      width = width,
       height = height,
       row = 0,
-      col = qfwin_col,
+      col = col,
       focusable = false,
     }
   end
@@ -96,10 +117,10 @@ function Preview:win_config(qfwin)
   return {
     relative = "win",
     win = vim.api.nvim_get_current_win(),
-    width = vim.api.nvim_win_get_width(0),
+    width = width,
     height = height,
-    row = -1 * height - border,
-    col = qfwin_col,
+    row = -1 * height - border_width,
+    col = col,
     focusable = false,
   }
 end
