@@ -8,19 +8,20 @@ local group = vim.api.nvim_create_augroup("QuickfixPreview", { clear = true })
 function M.setup(config)
   local preview = require("qfpreview.preview"):new(config)
 
-  local refresh = util.throttle(function()
-    preview:refresh()
+  ---@param qfwin integer
+  local refresh = util.throttle(function(qfwin)
+    preview:refresh(qfwin)
   end, preview.config.throttle)
 
   ---@type integer?
-  local qfbuf
+  local qfwin
 
   vim.api.nvim_create_autocmd({ "WinEnter", "CursorMoved" }, {
     group = group,
-    callback = function(args)
+    callback = function()
       if vim.bo.filetype == "qf" then
-        qfbuf = args.buf
-        refresh()
+        qfwin = vim.api.nvim_get_current_win()
+        refresh(qfwin)
       end
     end,
   })
@@ -28,10 +29,11 @@ function M.setup(config)
   vim.api.nvim_create_autocmd({ "WinLeave", "WinClosed" }, {
     group = group,
     callback = function(args)
-      if args.buf == qfbuf then
+      local curr_win = args.event == "WinLeave" and vim.fn.win_getid() or tonumber(args.match)
+      if curr_win == qfwin then
         refresh:cancel()
         preview:close()
-        qfbuf = nil
+        qfwin = nil
       end
     end,
   })

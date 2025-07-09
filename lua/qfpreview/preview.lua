@@ -1,5 +1,4 @@
 local fs = require("qfpreview.fs")
-local util = require("qfpreview.util")
 
 ---@class qfpreview.Config
 ---@field height number | "fill" the height of the window
@@ -71,23 +70,21 @@ function Preview:highlight(item)
   vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
 end
 
+---@param qfwin number
 ---@return vim.api.keyset.win_config
-function Preview:win_config()
+function Preview:win_config(qfwin)
   local border = vim.o.winborder == "none" and 0 or 2
 
+  -- TODO: col = qfwin.col
   if self.config.height == "fill" then
-    local qflist_win = util.find_qflist_win()
-
-    if qflist_win then
-      local statusline = vim.o.laststatus == 0 and 0 or 1
-      local height = vim.o.lines - vim.api.nvim_win_get_height(qflist_win) - vim.o.cmdheight - border - statusline
-      return {
-        relative = "editor",
-        width = vim.api.nvim_win_get_width(0),
-        height = height,
-        row = 0,
-      }
-    end
+    local statusline = vim.o.laststatus == 0 and 0 or 1
+    local height = vim.o.lines - vim.api.nvim_win_get_height(qfwin) - vim.o.cmdheight - border - statusline
+    return {
+      relative = "editor",
+      width = vim.api.nvim_win_get_width(0),
+      height = height,
+      row = 0,
+    }
   end
 
   local height = self.config.height or 15
@@ -112,7 +109,8 @@ function Preview:title(bufnr)
   return fs.normalize_path(vim.fn.bufname(bufnr), vim.fn.getcwd())
 end
 
-function Preview:open()
+---@param qfwin number
+function Preview:open(qfwin)
   local qf_list = vim.fn.getqflist()
   if vim.tbl_isempty(qf_list) then
     return
@@ -121,7 +119,8 @@ function Preview:open()
   local item = self:curr_item()
 
   ---@type vim.api.keyset.win_config
-  local winconfig = vim.tbl_extend("force", { col = 1, focusable = false }, self:win_config(), self.config.win or {})
+  local winconfig =
+    vim.tbl_extend("force", { col = 1, focusable = false }, self:win_config(qfwin), self.config.win or {})
 
   if self.config.show_name then
     winconfig.title = self:title(item.bufnr)
@@ -150,9 +149,10 @@ function Preview:close()
   end
 end
 
-function Preview:refresh()
+---@param qfwin number
+function Preview:refresh(qfwin)
   if not self:is_open() then
-    self:open()
+    self:open(qfwin)
     return
   end
 

@@ -1,21 +1,13 @@
 local M = {}
 
-function M.find_qflist_win()
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    if vim.bo[vim.api.nvim_win_get_buf(win)].filetype == "qf" then
-      return win
-    end
-  end
-  return nil
-end
-
 ---@class qfpreview.util.Throttled
 ---@operator call: ...
 ---@field cancel fun(self: qfpreview.util.Throttled)
 
----@param fn function
+---@generic P
+---@param fn fun(...: P)
 ---@param delay_ms number
----@return qfpreview.util.Throttled | fun()
+---@return qfpreview.util.Throttled | fun(...: P)
 function M.throttle(fn, delay_ms)
   local timer = vim.uv.new_timer()
 
