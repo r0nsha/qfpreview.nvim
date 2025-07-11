@@ -1,27 +1,13 @@
-local fs = require("qfpreview.fs")
+-- TODO: support vertically split qflist
 
----@class qfpreview.Config
----@field height number | "fill" the height of the window
---- number will set the window to a fixed height
---- "fill" will make the window fill the editor's remaining space
----@field show_name boolean whether to show the buffer's name
----@field throttle number the window's throttle time in milliseconds
----@field win vim.api.keyset.win_config additinonal window configuration
+local defaults = require("qfpreview.config").defaults
+local fs = require("qfpreview.fs")
 
 ---@class qfpreview.Preview
 ---@field config qfpreview.Config
 ---@field winnr number
----@field parsed_bufs table<number, boolean>
 local Preview = {}
 Preview.__index = Preview
-
----@type qfpreview.Config
-local defaults = {
-  height = "fill",
-  show_name = true,
-  throttle = 100,
-  win = {},
-}
 
 ---@param config? qfpreview.Config
 ---@return qfpreview.Preview
@@ -29,7 +15,6 @@ function Preview:new(config)
   local p = {
     config = vim.tbl_deep_extend("force", defaults, config or {}),
     win_id = nil,
-    parsed_bufs = {},
   }
   setmetatable(p, self)
   self.__index = self
@@ -57,20 +42,22 @@ function Preview:curr_item()
   return qflist[vim.fn.line(".")]
 end
 
----@param item QuickfixItem
-function Preview:highlight(item)
-  if not self.parsed_bufs[item.bufnr] then
-    vim.api.nvim_buf_call(item.bufnr, function()
-      vim.cmd("filetype detect")
-      pcall(vim.treesitter.start, item.bufnr)
-    end)
-    self.parsed_bufs[item.bufnr] = true
-  end
-
-  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
+---@return integer
+function Preview:bufnr()
+  return vim.api.nvim_win_get_buf(self.winnr)
 end
 
--- TODO: support vertically split qflist
+function Preview:disable_lsp()
+  local bufnr = self:bufnr()
+
+  if not self.config.opts.lsp then
+    for _, client in pairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+      vim.lsp.buf_detach_client(bufnr, client.id)
+    end
+  end
+
+  vim.diagnostic.enable(self.config.opts.diagnostics, { bufnr = bufnr })
+end
 
 ---@param qfwin number
 ---@return number,number
@@ -99,7 +86,7 @@ function Preview:win_config(qfwin)
   local border_width = has_border and 2 or 0
   local col, width = get_aligned_col_width(qfwin)
 
-  if self.config.height == "fill" then
+  if self.config.ui.height == "fill" then
     local statusline_height = vim.o.laststatus == 0 and 0 or 1
     local height = vim.o.lines - vim.api.nvim_win_get_height(qfwin) - vim.o.cmdheight - border_width - statusline_height
 
@@ -117,7 +104,7 @@ function Preview:win_config(qfwin)
     }
   end
 
-  local height = self.config.height or 15
+  local height = self.config.ui.height or 15
 
   return {
     relative = "win",
@@ -151,21 +138,22 @@ function Preview:open(qfwin)
   local item = self:curr_item()
 
   ---@type vim.api.keyset.win_config
-  local winconfig = vim.tbl_extend("force", self:win_config(qfwin), self.config.win or {})
+  local winconfig = vim.tbl_extend("force", self:win_config(qfwin), self.config.ui.win or {})
 
-  if self.config.show_name then
+  if self.config.ui.show_name then
     winconfig.title = self:title(item.bufnr)
     winconfig.title_pos = "left"
   end
 
   self.winnr = vim.api.nvim_open_win(item.bufnr, false, winconfig)
+  self:disable_lsp()
 
   vim.wo[self.winnr].relativenumber = false
   vim.wo[self.winnr].number = true
   vim.wo[self.winnr].winblend = 0
   vim.wo[self.winnr].cursorline = true
 
-  self:highlight(item)
+  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
 end
 
 function Preview:close()
@@ -190,12 +178,12 @@ function Preview:refresh(qfwin)
   local item = self:curr_item()
 
   vim.api.nvim_win_set_buf(self.winnr, item.bufnr)
-  if self.config.show_name then
+  if self.config.ui.show_name then
     local win_config = vim.tbl_extend("force", self:win_config(qfwin), { title = self:title(item.bufnr) })
     vim.api.nvim_win_set_config(self.winnr, win_config)
   end
 
-  self:highlight(item)
+  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
 end
 
 return Preview
