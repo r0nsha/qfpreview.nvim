@@ -52,11 +52,13 @@ end
 function Preview:disable_lsp()
   local bufnr = self:bufnr()
 
-  for _, client in pairs(vim.lsp.get_clients({ bufnr = bufnr })) do
-    vim.lsp.buf_detach_client(bufnr, client.id)
+  if not self.config.opts.lsp then
+    for _, client in pairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+      vim.lsp.buf_detach_client(bufnr, client.id)
+    end
   end
 
-  vim.diagnostic.enable(false, { bufnr = bufnr })
+  vim.diagnostic.enable(self.config.opts.diagnostics, { bufnr = bufnr })
 end
 
 ---@param qfwin number
