@@ -59,6 +59,21 @@ function Preview:curr_item()
   return qflist[vim.fn.line(".")]
 end
 
+---@return integer
+function Preview:bufnr()
+  return vim.api.nvim_win_get_buf(self.winnr)
+end
+
+function Preview:disable_lsp()
+  local bufnr = self:bufnr()
+
+  for _, client in pairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+    vim.lsp.buf_detach_client(bufnr, client.id)
+  end
+
+  vim.diagnostic.enable(false, { bufnr = bufnr })
+end
+
 ---@param qfwin number
 ---@return number,number
 local function get_aligned_col_width(qfwin)
@@ -146,6 +161,7 @@ function Preview:open(qfwin)
   end
 
   self.winnr = vim.api.nvim_open_win(item.bufnr, false, winconfig)
+  self:disable_lsp()
 
   vim.wo[self.winnr].relativenumber = false
   vim.wo[self.winnr].number = true
