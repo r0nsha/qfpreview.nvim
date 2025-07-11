@@ -25,7 +25,7 @@ M.defaults = {
   },
   opts = {
     throttle = 100,
-    lsp = false,
+    lsp = true,
     diagnostics = false,
   },
 }
