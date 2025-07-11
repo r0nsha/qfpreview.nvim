@@ -11,7 +11,7 @@ function M.setup(config)
   ---@param qfwin integer
   local refresh = util.throttle(function(qfwin)
     preview:refresh(qfwin)
-  end, preview.config.throttle)
+  end, preview.config.opts.throttle)
 
   ---@type integer?
   local qfwin

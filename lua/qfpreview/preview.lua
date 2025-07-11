@@ -1,14 +1,7 @@
 -- TODO: support vertically split qflist
 
+local defaults = require("qfpreview.config").defaults
 local fs = require("qfpreview.fs")
-
----@class qfpreview.Config
----@field height number | "fill" the height of the window
---- number will set the window to a fixed height
---- "fill" will make the window fill the editor's remaining space
----@field show_name boolean whether to show the buffer's name
----@field throttle number the window's throttle time in milliseconds
----@field win vim.api.keyset.win_config additinonal window configuration
 
 ---@class qfpreview.Preview
 ---@field config qfpreview.Config
@@ -16,14 +9,6 @@ local fs = require("qfpreview.fs")
 ---@field parsed_bufs table<number, boolean>
 local Preview = {}
 Preview.__index = Preview
-
----@type qfpreview.Config
-local defaults = {
-  height = "fill",
-  show_name = true,
-  throttle = 100,
-  win = {},
-}
 
 ---@param config? qfpreview.Config
 ---@return qfpreview.Preview
@@ -101,7 +86,7 @@ function Preview:win_config(qfwin)
   local border_width = has_border and 2 or 0
   local col, width = get_aligned_col_width(qfwin)
 
-  if self.config.height == "fill" then
+  if self.config.ui.height == "fill" then
     local statusline_height = vim.o.laststatus == 0 and 0 or 1
     local height = vim.o.lines - vim.api.nvim_win_get_height(qfwin) - vim.o.cmdheight - border_width - statusline_height
 
@@ -119,7 +104,7 @@ function Preview:win_config(qfwin)
     }
   end
 
-  local height = self.config.height or 15
+  local height = self.config.ui.height or 15
 
   return {
     relative = "win",
@@ -153,9 +138,9 @@ function Preview:open(qfwin)
   local item = self:curr_item()
 
   ---@type vim.api.keyset.win_config
-  local winconfig = vim.tbl_extend("force", self:win_config(qfwin), self.config.win or {})
+  local winconfig = vim.tbl_extend("force", self:win_config(qfwin), self.config.ui.win or {})
 
-  if self.config.show_name then
+  if self.config.ui.show_name then
     winconfig.title = self:title(item.bufnr)
     winconfig.title_pos = "left"
   end
@@ -193,7 +178,7 @@ function Preview:refresh(qfwin)
   local item = self:curr_item()
 
   vim.api.nvim_win_set_buf(self.winnr, item.bufnr)
-  if self.config.show_name then
+  if self.config.ui.show_name then
     local win_config = vim.tbl_extend("force", self:win_config(qfwin), { title = self:title(item.bufnr) })
     vim.api.nvim_win_set_config(self.winnr, win_config)
   end
