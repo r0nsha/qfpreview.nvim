@@ -6,7 +6,6 @@ local fs = require("qfpreview.fs")
 ---@class qfpreview.Preview
 ---@field config qfpreview.Config
 ---@field winnr number
----@field parsed_bufs table<number, boolean>
 local Preview = {}
 Preview.__index = Preview
 
@@ -16,7 +15,6 @@ function Preview:new(config)
   local p = {
     config = vim.tbl_deep_extend("force", defaults, config or {}),
     win_id = nil,
-    parsed_bufs = {},
   }
   setmetatable(p, self)
   self.__index = self
