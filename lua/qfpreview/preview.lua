@@ -1,3 +1,5 @@
+-- TODO: support vertically split qflist
+
 local fs = require("qfpreview.fs")
 
 ---@class qfpreview.Config
@@ -56,21 +58,6 @@ function Preview:curr_item()
   local qflist = vim.fn.getqflist()
   return qflist[vim.fn.line(".")]
 end
-
----@param item QuickfixItem
-function Preview:highlight(item)
-  if not self.parsed_bufs[item.bufnr] then
-    vim.api.nvim_buf_call(item.bufnr, function()
-      vim.cmd("filetype detect")
-      pcall(vim.treesitter.start, item.bufnr)
-    end)
-    self.parsed_bufs[item.bufnr] = true
-  end
-
-  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
-end
-
--- TODO: support vertically split qflist
 
 ---@param qfwin number
 ---@return number,number
@@ -165,7 +152,7 @@ function Preview:open(qfwin)
   vim.wo[self.winnr].winblend = 0
   vim.wo[self.winnr].cursorline = true
 
-  self:highlight(item)
+  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
 end
 
 function Preview:close()
@@ -195,7 +182,7 @@ function Preview:refresh(qfwin)
     vim.api.nvim_win_set_config(self.winnr, win_config)
   end
 
-  self:highlight(item)
+  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
 end
 
 return Preview
