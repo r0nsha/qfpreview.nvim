@@ -153,6 +153,8 @@ function Preview:open(qfwin)
   vim.wo[self.winnr].winblend = 0
   vim.wo[self.winnr].cursorline = true
 
+  vim.bo[item.bufnr].buftype = "nowrite"
+
   vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
 end
 
