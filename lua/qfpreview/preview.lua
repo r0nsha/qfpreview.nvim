@@ -14,7 +14,7 @@ Preview.__index = Preview
 function Preview:new(config)
   local p = {
     config = vim.tbl_deep_extend("force", defaults, config or {}),
-    win_id = nil,
+    winnr = nil,
   }
   setmetatable(p, self)
   self.__index = self
@@ -39,7 +39,7 @@ end
 function Preview:curr_item()
   ---@type QuickfixItem
   local qflist = vim.fn.getqflist()
-  return qflist[vim.fn.line(".")]
+  return qflist[vim.fn.line(".") - 1]
 end
 
 ---@return integer
@@ -50,7 +50,7 @@ end
 function Preview:disable_lsp()
   local bufnr = self:bufnr()
 
-  if not self.config.opts.lsp then
+  if self.config.opts.lsp == false then
     for _, client in pairs(vim.lsp.get_clients({ bufnr = bufnr })) do
       vim.lsp.buf_detach_client(bufnr, client.id)
     end
@@ -155,7 +155,7 @@ function Preview:open(qfwin)
 
   vim.bo[item.bufnr].buftype = "nowrite"
 
-  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
+  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col + 1 })
 end
 
 function Preview:close()
@@ -163,7 +163,7 @@ function Preview:close()
     return
   end
 
-  if vim.api.nvim_win_is_valid(self.winnr) then
+  if self.winnr and vim.api.nvim_win_is_valid(self.winnr) then
     local force = true
     vim.api.nvim_win_close(self.winnr, force)
     self.winnr = nil
@@ -185,7 +185,7 @@ function Preview:refresh(qfwin)
     vim.api.nvim_win_set_config(self.winnr, win_config)
   end
 
-  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col })
+  vim.api.nvim_win_set_cursor(self.winnr, { item.lnum, item.col + 1 })
 end
 
 return Preview

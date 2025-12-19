@@ -39,6 +39,8 @@ function M.throttle(fn, delay_ms)
 
   function t:cancel()
     timer:stop()
+    timer:close()
+    timer = nil
   end
 
   return t
