@@ -136,6 +136,10 @@ function Preview:open(qfwin)
   end
 
   local item = self:curr_item()
+  if not item or not item.bufnr or item.bufnr == 0 then
+    self:close()
+    return
+  end
 
   ---@type vim.api.keyset.win_config
   local winconfig = vim.tbl_extend("force", self:win_config(qfwin), self.config.ui.win or {})
@@ -178,6 +182,10 @@ function Preview:refresh(qfwin)
   end
 
   local item = self:curr_item()
+  if not item or not item.bufnr or item.bufnr == 0 then
+    self:close()
+    return
+  end
 
   vim.api.nvim_win_set_buf(self.winnr, item.bufnr)
   if self.config.ui.show_name then
