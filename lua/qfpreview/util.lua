@@ -28,6 +28,9 @@ function M.throttle(fn, delay_ms)
   setmetatable(t, {
     __call = function(_, ...)
       local args = { ... }
+      if not timer or timer:is_closing() then
+        timer = vim.uv.new_timer()
+      end
       timer:stop()
       timer:start(delay_ms, 0, function()
         vim.schedule(function()
@@ -38,8 +41,10 @@ function M.throttle(fn, delay_ms)
   })
 
   function t:cancel()
-    timer:stop()
-    timer:close()
+    if timer and not timer:is_closing() then
+      timer:stop()
+      timer:close()
+    end
     timer = nil
   end
 
