@@ -39,7 +39,7 @@ end
 function Preview:curr_item()
   ---@type QuickfixItem
   local qflist = vim.fn.getqflist()
-  return qflist[vim.fn.line(".") - 1]
+  return qflist[vim.fn.line(".")]
 end
 
 ---@return integer
